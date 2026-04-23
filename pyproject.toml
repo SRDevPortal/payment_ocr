@@ -1,14 +1,16 @@
 [project]
 name = "payment_ocr"
+description = "Payment proof OCR for Patient Encounter payment rows"
 authors = [
     { name = "SRIAAS", email = "webdevelopersriaas@gmail.com"}
 ]
-description = "Payment proof OCR for Patient Encounter payment rows"
+
 requires-python = ">=3.10"
 readme = "README.md"
 dynamic = ["version"]
+
 dependencies = [
-    # "frappe~=15.0.0" # Installed and managed by bench.
+    # "frappe~=15.0.0"  # Installed and managed by bench
     "boto3",
     "requests",
 ]
@@ -16,6 +18,10 @@ dependencies = [
 [build-system]
 requires = ["flit_core >=3.4,<4"]
 build-backend = "flit_core.buildapi"
+
+# Frappe compatibility requirement
+[tool.bench.frappe-dependencies]
+frappe = ">=15.0.0,<16.0.0"
 
 # These dependencies are only installed when developer mode is enabled
 [tool.bench.dev-dependencies]
@@ -25,6 +31,7 @@ build-backend = "flit_core.buildapi"
 [deploy.dependencies.apt]
 packages = []
 
+# Ruff configuration for linting
 [tool.ruff]
 line-length = 110
 target-version = "py310"
@@ -39,6 +46,7 @@ select = [
     "B",
     "RUF",
 ]
+
 ignore = [
     "B017", # assertRaises(Exception) - should be more specific
     "B018", # useless expression, not assigned to anything
@@ -54,6 +62,7 @@ ignore = [
     "F722", # syntax error in forward type annotation
     "W191", # indentation contains tabs
 ]
+
 typing-modules = ["frappe.types.DF"]
 
 [tool.ruff.format]

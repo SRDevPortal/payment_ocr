@@ -1,0 +1,91 @@
+{
+ "actions": [],
+ "creation": "2026-04-22 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "enable_auto_ocr",
+  "textract_region",
+  "llm_section",
+  "enable_llm_fallback",
+  "openai_api_key",
+  "openai_model",
+  "mismatch_section",
+  "amount_mismatch_behavior"
+ ],
+ "fields": [
+  {
+   "default": "1",
+   "fieldname": "enable_auto_ocr",
+   "fieldtype": "Check",
+   "label": "Enable Auto OCR"
+  },
+  {
+   "description": "Optional. Uses site aws_region when blank.",
+   "fieldname": "textract_region",
+   "fieldtype": "Data",
+   "label": "Textract Region Override"
+  },
+  {
+   "fieldname": "llm_section",
+   "fieldtype": "Section Break",
+   "label": "LLM Fallback"
+  },
+  {
+   "default": "0",
+   "fieldname": "enable_llm_fallback",
+   "fieldtype": "Check",
+   "label": "Enable LLM Fallback"
+  },
+  {
+   "fieldname": "openai_api_key",
+   "fieldtype": "Password",
+   "label": "OpenAI API Key"
+  },
+  {
+   "default": "gpt-4.1-mini",
+   "fieldname": "openai_model",
+   "fieldtype": "Data",
+   "label": "OpenAI Model"
+  },
+  {
+   "fieldname": "mismatch_section",
+   "fieldtype": "Section Break",
+   "label": "Amount Mismatch"
+  },
+  {
+   "default": "Warn Only",
+   "fieldname": "amount_mismatch_behavior",
+   "fieldtype": "Select",
+   "label": "Amount Mismatch Behavior",
+   "options": "Warn Only"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-04-22 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Payment OCR",
+ "name": "Payment OCR Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 0,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

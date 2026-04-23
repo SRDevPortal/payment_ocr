@@ -1,0 +1,134 @@
+{
+ "actions": [],
+ "autoname": "format:PAY-OCR-LOG-{YYYY}-{#####}",
+ "creation": "2026-04-22 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "status",
+  "patient_encounter",
+  "payment_row_name",
+  "payment_proof_url",
+  "processed_at",
+  "extracted_section",
+  "reference_no",
+  "reference_date",
+  "extracted_amount",
+  "amount_match_status",
+  "raw_ocr_text",
+  "extracted_json",
+  "error_message"
+ ],
+ "fields": [
+  {
+   "default": "Completed",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Completed\nFailed\nSkipped"
+  },
+  {
+   "fieldname": "patient_encounter",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Patient Encounter",
+   "options": "Patient Encounter",
+   "search_index": 1
+  },
+  {
+   "fieldname": "payment_row_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "SR Multi Mode Payment Row",
+   "search_index": 1
+  },
+  {
+   "fieldname": "payment_proof_url",
+   "fieldtype": "Small Text",
+   "label": "Payment Proof URL"
+  },
+  {
+   "fieldname": "processed_at",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Processed At"
+  },
+  {
+   "fieldname": "extracted_section",
+   "fieldtype": "Section Break",
+   "label": "Extracted Data"
+  },
+  {
+   "fieldname": "reference_no",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Extracted Reference No"
+  },
+  {
+   "fieldname": "reference_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Extracted Reference Date"
+  },
+  {
+   "fieldname": "extracted_amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Extracted Amount"
+  },
+  {
+   "fieldname": "amount_match_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Amount Match Status",
+   "options": "Matched\nMismatched\nNot Checked"
+  },
+  {
+   "fieldname": "raw_ocr_text",
+   "fieldtype": "Long Text",
+   "label": "Raw OCR Text"
+  },
+  {
+   "fieldname": "extracted_json",
+   "fieldtype": "Code",
+   "label": "Extracted JSON",
+   "options": "JSON"
+  },
+  {
+   "fieldname": "error_message",
+   "fieldtype": "Long Text",
+   "label": "Error Message"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-04-22 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Payment OCR",
+ "name": "Payment OCR Log",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "payment_row_name",
+ "track_changes": 1
+}

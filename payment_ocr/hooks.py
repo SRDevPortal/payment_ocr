@@ -4,7 +4,6 @@ app_publisher = "SRIAAS"
 app_description = "Payment proof OCR for Patient Encounter payment rows"
 app_email = "webdevelopersriaas@gmail.com"
 app_license = "mit"
-required_apps = ["sriaas_clinic"]
 
 # Apps
 # ------------------

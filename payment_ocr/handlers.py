@@ -26,7 +26,7 @@ def _run_auto_ocr(doc, persist=False):
 	mismatches = [
 		result
 		for result in results
-		if result.get("status") == "Completed" and result.get("amount_match_status") == "Mismatched"
+		if result.get("amount_match_status") == "Mismatched"
 	]
 	failed = [result for result in results if result.get("status") == "Failed"]
 	duplicates = [result for result in results if result.get("duplicate_log_name")]

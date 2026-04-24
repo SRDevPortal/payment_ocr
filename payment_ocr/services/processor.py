@@ -135,9 +135,15 @@ def _process_row(doc, row, settings, persist=False):
 				"extracted": extracted,
 			}
 
-		updates = _apply_reference_updates(row, extracted, persist=persist)
 		amount_status = _compare_amounts(extracted.get("amount"), row.get("mmp_paid_amount"))
-		status = "Completed"
+		updates = _apply_reference_updates(
+			row,
+			extracted,
+			amount_status=amount_status,
+			persist=persist,
+		)
+		status = "Skipped" if amount_status == "Mismatched" else "Completed"
+		error_message = _mismatch_message(extracted.get("amount"), row.get("mmp_paid_amount")) if amount_status == "Mismatched" else None
 
 		log_name = _create_log(
 			{
@@ -149,6 +155,7 @@ def _process_row(doc, row, settings, persist=False):
 				"amount_match_status": amount_status,
 				"reference_no": extracted.get("transaction_id"),
 				"reference_date": extracted.get("date"),
+				"error_message": error_message,
 			}
 		)
 		deleted_files = []
@@ -182,21 +189,33 @@ def _process_row(doc, row, settings, persist=False):
 		}
 
 
-def _apply_reference_updates(row, extracted, persist=False):
+def _apply_reference_updates(row, extracted, amount_status="Not Checked", persist=False):
 	updates = {}
+	manual_amount_blank = _is_blank_amount(row.get("mmp_paid_amount"))
+
+	# If OCR amount does not match the manually entered amount,
+	# do not auto-fill any values on the payment row.
+	if amount_status == "Mismatched":
+		return updates
+
+	# If user already entered an amount, only apply OCR payment details
+	# after an explicit amount match. When amount is blank, OCR may populate
+	# all available payment details from the receipt.
+	if not manual_amount_blank and amount_status != "Matched":
+		return updates
 
 	amount = extracted.get("amount")
-	if amount not in (None, "") and _is_blank_amount(row.get("mmp_paid_amount")):
+	if amount not in (None, "") and manual_amount_blank:
 		row.mmp_paid_amount = amount
 		updates["mmp_paid_amount"] = amount
 
 	transaction_id = extracted.get("transaction_id")
-	if transaction_id and not row.get("mmp_reference_no"):
+	if transaction_id and row.get("mmp_reference_no") != transaction_id:
 		row.mmp_reference_no = transaction_id
 		updates["mmp_reference_no"] = transaction_id
 
 	reference_date = extracted.get("date")
-	if reference_date and not row.get("mmp_reference_date"):
+	if reference_date and row.get("mmp_reference_date") != reference_date:
 		row.mmp_reference_date = reference_date
 		updates["mmp_reference_date"] = reference_date
 
@@ -432,6 +451,13 @@ def _clean_error_message(exc):
 	if message:
 		return message
 	return exc.__class__.__name__
+
+
+def _mismatch_message(extracted_amount, entered_amount):
+	return (
+		f"Amount mismatch detected. Entered amount: {entered_amount}, "
+		f"extracted amount: {extracted_amount}. Payment fields were not updated."
+	)
 
 
 def _integration_available():

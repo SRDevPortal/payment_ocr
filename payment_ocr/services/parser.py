@@ -27,6 +27,7 @@ def parse_payment_text(lines):
 
 	for index, line in enumerate(lines):
 		lower_line = line.lower()
+		next_line = _next_line(lines, index)
 
 		if result["amount"] is None:
 			result["amount"] = _extract_amount(line)
@@ -35,16 +36,16 @@ def parse_payment_text(lines):
 			result["date"] = _extract_date(line)
 
 		if result["transaction_id"] is None:
-			result["transaction_id"] = _extract_transaction_id(line, _next_line(lines, index))
+			result["transaction_id"] = _extract_transaction_id(line, next_line)
 
 		if result["status"] is None:
 			result["status"] = _extract_status(lower_line)
 
 		if result["payer"] is None:
-			result["payer"] = _extract_labeled_value(line, ("from", "paid by", "payer"))
+			result["payer"] = _extract_labeled_value(line, ("from", "paid by", "payer"), next_line)
 
 		if result["receiver"] is None:
-			result["receiver"] = _extract_labeled_value(line, ("to", "paid to", "receiver"))
+			result["receiver"] = _extract_labeled_value(line, ("to", "paid to", "receiver"), next_line)
 
 	return clean_result(result)
 
@@ -164,11 +165,13 @@ def _extract_status(lower_line):
 	return None
 
 
-def _extract_labeled_value(line, labels):
+def _extract_labeled_value(line, labels, next_line=None):
 	for label in labels:
 		match = re.search(rf"\b{re.escape(label)}\b\s*:?\s*(.+)$", line, flags=re.IGNORECASE)
 		if match:
 			value = match.group(1).strip()
+			if _should_extend_name(value, next_line):
+				value = f"{value} {next_line.strip()}"
 			if value and not re.fullmatch(r"[:\-\s]+", value):
 				return value
 	return None
@@ -201,6 +204,62 @@ def _clean_name(value):
 	if len(value) < 3:
 		return None
 	return value
+
+
+def _should_extend_name(value, next_line):
+	if not value or not next_line:
+		return False
+
+	next_line = str(next_line).strip()
+	if not next_line:
+		return False
+
+	if value.count("(") > value.count(")"):
+		return not _looks_like_new_section(next_line)
+
+	return False
+
+
+def _looks_like_new_section(line):
+	line = str(line or "").strip()
+	if not line:
+		return True
+
+	lower_line = line.lower()
+	prefixes = (
+		"to ",
+		"from ",
+		"paid to",
+		"paid by",
+		"payer",
+		"receiver",
+		"upi ",
+		"transaction",
+		"txn ",
+		"reference",
+		"ref ",
+		"bank ref",
+		"google ",
+		"phonepe",
+		"paytm",
+		"pay again",
+		"completed",
+		"success",
+		"failed",
+	)
+	if lower_line.startswith(prefixes):
+		return True
+
+	if "@" in line:
+		return True
+
+	if _extract_amount(line) is not None:
+		return True
+
+	if _extract_date(line) is not None:
+		return True
+
+	return False
 
 
 def _looks_like_date(value):

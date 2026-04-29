@@ -1,5 +1,7 @@
 import frappe
 
+from payment_ocr.setup.runner import setup_all
+
 
 REQUIRED_DOCTYPES = ("Patient Encounter", "SR Multi Mode Payment")
 REQUIRED_CHILD_FIELDS = (
@@ -26,13 +28,9 @@ def before_install():
 
 
 def after_install():
-	if frappe.db.exists("DocType", "Payment OCR Settings"):
-		settings = frappe.get_single("Payment OCR Settings")
-		if settings.enable_auto_ocr is None:
-			settings.enable_auto_ocr = 1
-		if not settings.openai_model:
-			settings.openai_model = "gpt-4.1-mini"
-		if not settings.amount_mismatch_behavior:
-			settings.amount_mismatch_behavior = "Warn Only"
-		settings.save(ignore_permissions=True)
-		frappe.db.commit()
+	setup_all()
+	frappe.db.commit()
+
+
+def after_migrate():
+	setup_all()

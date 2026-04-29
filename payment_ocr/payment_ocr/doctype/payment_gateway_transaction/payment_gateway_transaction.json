@@ -1,0 +1,186 @@
+{
+ "actions": [],
+ "autoname": "format:PGTX-{YYYY}-{#####}",
+ "creation": "2026-04-29 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "transaction_id",
+  "amount",
+  "transaction_datetime",
+  "transaction_date",
+  "payer",
+  "payment_app",
+  "status",
+  "source_section",
+  "source",
+  "scraped_at",
+  "raw_text",
+  "raw_json",
+  "verification_section",
+  "verification_status",
+  "matched_patient_encounter",
+  "matched_payment_row",
+  "matched_payment_ocr_log",
+  "match_score",
+  "match_reason",
+  "duplicate_of",
+  "verified_at"
+ ],
+ "fields": [
+  {
+   "fieldname": "transaction_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Transaction ID",
+   "reqd": 1,
+   "search_index": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Amount"
+  },
+  {
+   "fieldname": "transaction_datetime",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Transaction Date Time"
+  },
+  {
+   "fieldname": "transaction_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Transaction Date"
+  },
+  {
+   "fieldname": "payer",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Payer"
+  },
+  {
+   "fieldname": "payment_app",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Payment App"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Gateway Status"
+  },
+  {
+   "fieldname": "source_section",
+   "fieldtype": "Section Break",
+   "label": "Source Data"
+  },
+  {
+   "fieldname": "source",
+   "fieldtype": "Data",
+   "label": "Source"
+  },
+  {
+   "fieldname": "scraped_at",
+   "fieldtype": "Datetime",
+   "label": "Scraped At"
+  },
+  {
+   "fieldname": "raw_text",
+   "fieldtype": "Long Text",
+   "label": "Raw Text"
+  },
+  {
+   "fieldname": "raw_json",
+   "fieldtype": "Code",
+   "label": "Raw JSON",
+   "options": "JSON"
+  },
+  {
+   "fieldname": "verification_section",
+   "fieldtype": "Section Break",
+   "label": "Verification"
+  },
+  {
+   "fieldname": "verification_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Verification Status",
+   "options": "Unmatched\nPending\nVerified\nPartial Matched\nAmount Mismatch\nDuplicate\nFailed"
+  },
+  {
+   "fieldname": "matched_patient_encounter",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Matched Patient Encounter",
+   "options": "Patient Encounter"
+  },
+  {
+   "fieldname": "matched_payment_row",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Matched Payment Row",
+   "search_index": 1
+  },
+  {
+   "fieldname": "matched_payment_ocr_log",
+   "fieldtype": "Link",
+   "label": "Matched Payment OCR Log",
+   "options": "Payment OCR Log"
+  },
+  {
+   "fieldname": "match_score",
+   "fieldtype": "Int",
+   "label": "Match Score"
+  },
+  {
+   "fieldname": "match_reason",
+   "fieldtype": "Long Text",
+   "label": "Match Reason"
+  },
+  {
+   "fieldname": "duplicate_of",
+   "fieldtype": "Link",
+   "label": "Duplicate Of",
+   "options": "Payment Gateway Transaction"
+  },
+  {
+   "fieldname": "verified_at",
+   "fieldtype": "Datetime",
+   "label": "Verified At"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-04-29 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Payment OCR",
+ "name": "Payment Gateway Transaction",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "transaction_datetime",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "transaction_id",
+ "track_changes": 1
+}

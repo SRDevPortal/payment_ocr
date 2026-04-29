@@ -4,9 +4,9 @@ frappe.ui.form.on("Patient Encounter", {
 			return;
 		}
 
-		frm.add_custom_button(__("Read Payment Proofs"), () => {
-			frappe.call({
-				method: "payment_ocr.api.process_patient_encounter",
+			frm.add_custom_button(__("Read Payment Proofs"), () => {
+				frappe.call({
+					method: "payment_ocr.api.ocr.process_patient_encounter",
 				args: {
 					encounter_name: frm.doc.name,
 				},
@@ -54,8 +54,58 @@ frappe.ui.form.on("Patient Encounter", {
 					}
 
 					frm.reload_doc();
-				},
+					},
+				});
 			});
-		});
-	},
-});
+
+			frm.add_custom_button(__("Verify Payment Receipts"), () => {
+				frappe.call({
+					method: "payment_ocr.api.gateway.reconcile_patient_encounter_payment_verifications",
+					args: {
+						encounter_name: frm.doc.name,
+					},
+					freeze: true,
+					freeze_message: __("Verifying payment receipts..."),
+					callback(r) {
+						const results = r.message || [];
+						const verified = results.filter(
+							(row) => row.verification_status === "Verified"
+						);
+						const pending = results.filter((row) => row.verification_status === "Pending");
+						const mismatches = results.filter(
+							(row) => row.verification_status === "Amount Mismatch"
+						);
+						const duplicates = results.filter(
+							(row) => row.verification_status === "Duplicate"
+						);
+
+						if (duplicates.length || mismatches.length) {
+							frappe.msgprint({
+								title: __("Payment Verification Warning"),
+								indicator: "red",
+								message: __(
+									"{0} duplicate and {1} amount mismatch payment row(s) need review.",
+									[duplicates.length, mismatches.length]
+								),
+							});
+						} else if (pending.length) {
+							frappe.msgprint({
+								title: __("Payment Verification Pending"),
+								indicator: "orange",
+								message: __("{0} payment row(s) are still pending gateway receipt.", [
+									pending.length,
+								]),
+							});
+						} else {
+							frappe.show_alert({
+								message: __("{0} payment row(s) verified", [verified.length]),
+								indicator: "green",
+							});
+						}
+
+						frm.reload_doc();
+					},
+				});
+			});
+		},
+	});

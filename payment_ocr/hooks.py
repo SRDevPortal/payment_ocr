@@ -85,6 +85,7 @@ app_license = "mit"
 # before_install = "payment_ocr.install.before_install"
 before_install = "payment_ocr.install.before_install"
 after_install = "payment_ocr.install.after_install"
+after_migrate = "payment_ocr.install.after_migrate"
 
 # Uninstallation
 # ------------
@@ -148,6 +149,10 @@ doc_events = {
 doctype_js = {
 	"Patient Encounter": "public/js/patient_encounter.js",
 }
+
+fixtures = [
+	{"dt": "Custom Field", "filters": [["module", "=", "Payment OCR"]]},
+]
 
 # Scheduled Tasks
 # ---------------

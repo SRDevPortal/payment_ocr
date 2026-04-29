@@ -6,6 +6,10 @@
  "field_order": [
   "enable_auto_ocr",
   "textract_region",
+  "verification_section",
+  "enable_gateway_verification",
+  "enable_partial_gateway_match",
+  "gateway_webhook_secret",
   "llm_section",
   "enable_llm_fallback",
   "openai_api_key",
@@ -25,6 +29,30 @@
    "fieldname": "textract_region",
    "fieldtype": "Data",
    "label": "Textract Region Override"
+  },
+  {
+   "fieldname": "verification_section",
+   "fieldtype": "Section Break",
+   "label": "Gateway Verification"
+  },
+  {
+   "default": "1",
+   "fieldname": "enable_gateway_verification",
+   "fieldtype": "Check",
+   "label": "Enable Gateway Verification"
+  },
+  {
+   "default": "0",
+   "description": "When enabled, match gateway transactions without OCR reference number by amount, timestamp within 1 second, payer name, and payment app.",
+   "fieldname": "enable_partial_gateway_match",
+   "fieldtype": "Check",
+   "label": "Enable Partial Gateway Match"
+  },
+  {
+   "description": "Required for n8n/Chrome extension webhook requests. Send as X-Payment-OCR-Token.",
+   "fieldname": "gateway_webhook_secret",
+   "fieldtype": "Password",
+   "label": "Gateway Webhook Secret"
   },
   {
    "fieldname": "llm_section",

@@ -6,7 +6,10 @@ from decimal import Decimal, InvalidOperation
 EMPTY_RESULT = {
 	"amount": None,
 	"date": None,
+	"time": None,
+	"transaction_datetime": None,
 	"transaction_id": None,
+	"payment_app": None,
 	"status": None,
 	"payer": None,
 	"receiver": None,
@@ -35,14 +38,22 @@ def parse_payment_text(lines):
 		if result["date"] is None:
 			result["date"] = _extract_date(line)
 
+		if result["time"] is None:
+			result["time"] = _extract_time(line)
+
 		if result["transaction_id"] is None:
 			result["transaction_id"] = _extract_transaction_id(line, next_line)
+
+		if result["payment_app"] is None:
+			result["payment_app"] = _extract_payment_app(line)
 
 		if result["status"] is None:
 			result["status"] = _extract_status(lower_line)
 
 		if result["payer"] is None:
 			result["payer"] = _extract_labeled_value(line, ("from", "paid by", "payer"), next_line)
+			if result["payer"] is None:
+				result["payer"] = _extract_unlabeled_payer(lines, index)
 
 		if result["receiver"] is None:
 			result["receiver"] = _extract_labeled_value(line, ("to", "paid to", "receiver"), next_line)
@@ -56,7 +67,10 @@ def clean_result(data):
 
 	result["amount"] = normalize_amount(result.get("amount"))
 	result["date"] = normalize_date(result.get("date"))
+	result["time"] = normalize_time(result.get("time"))
+	result["transaction_datetime"] = normalize_datetime(result.get("transaction_datetime"), result["date"], result["time"])
 	result["transaction_id"] = _clean_transaction_id(result.get("transaction_id"))
+	result["payment_app"] = _clean_name(result.get("payment_app"))
 	result["status"] = _clean_status(result.get("status"))
 	result["payer"] = _clean_name(result.get("payer"))
 	result["receiver"] = _clean_name(result.get("receiver"))
@@ -109,6 +123,48 @@ def normalize_date(value):
 	return None
 
 
+def normalize_time(value):
+	if not value:
+		return None
+
+	text = str(value).replace("\u202f", " ").replace("\xa0", " ")
+	text = re.sub(r"\s+", " ", text).strip()
+	formats = (
+		"%I:%M:%S %p",
+		"%I:%M %p",
+		"%H:%M:%S",
+		"%H:%M",
+	)
+	for time_format in formats:
+		try:
+			return datetime.strptime(text, time_format).strftime("%H:%M:%S")
+		except ValueError:
+			pass
+	return None
+
+
+def normalize_datetime(value, date_value=None, time_value=None):
+	if value:
+		text = str(value).replace("\u202f", " ").replace("\xa0", " ")
+		text = re.sub(r"\s+", " ", text).strip()
+		formats = (
+			"%I:%M:%S %p %b %d, %Y",
+			"%I:%M %p %b %d, %Y",
+			"%Y-%m-%d %H:%M:%S",
+			"%Y-%m-%dT%H:%M:%S.%fZ",
+			"%Y-%m-%dT%H:%M:%SZ",
+		)
+		for date_format in formats:
+			try:
+				return datetime.strptime(text, date_format).strftime("%Y-%m-%d %H:%M:%S")
+			except ValueError:
+				pass
+
+	if date_value and time_value:
+		return f"{date_value} {time_value}"
+	return None
+
+
 def _extract_amount(line):
 	patterns = (
 		r"(?:rs\.?|inr|\u20b9)\s*([0-9][0-9,]*(?:\.\d{1,2})?)",
@@ -135,6 +191,18 @@ def _extract_date(line):
 	return None
 
 
+def _extract_time(line):
+	match = re.search(r"\b\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM)\b", line, flags=re.IGNORECASE)
+	if match:
+		return match.group(0)
+
+	match = re.search(r"\b\d{1,2}:\d{2}:\d{2}\b", line)
+	if match:
+		return match.group(0)
+
+	return None
+
+
 def _extract_transaction_id(line, next_line=None):
 	label_pattern = r"(upi\s*)?(transaction|txn|utr|reference|ref|bank\s*ref)\s*(id|no|number)?"
 	if not re.search(label_pattern, line, flags=re.IGNORECASE):
@@ -157,12 +225,40 @@ def _extract_transaction_id(line, next_line=None):
 	return None
 
 
+def _extract_payment_app(line):
+	apps = (
+		"Google Pay",
+		"PhonePe",
+		"Paytm",
+		"Whatsapp",
+		"WhatsApp",
+		"Generic (Other)",
+	)
+	for app in apps:
+		if app.lower() in str(line or "").lower():
+			return app
+	return None
+
+
 def _extract_status(lower_line):
 	if any(word in lower_line for word in ("success", "completed", "paid", "done")):
 		return "SUCCESS"
 	if any(word in lower_line for word in ("failed", "declined", "failure", "cancelled")):
 		return "FAILED"
 	return None
+
+
+def _extract_unlabeled_payer(lines, index):
+	line = str(lines[index] or "").strip()
+	previous_line = str(lines[index - 1] or "").strip() if index > 0 else ""
+	next_line = str(lines[index + 1] or "").strip() if index + 1 < len(lines) else ""
+	if not (previous_line and _extract_date(previous_line)):
+		return None
+	if not next_line or "@" not in next_line:
+		return None
+	if _looks_like_new_section(line) or _extract_time(line) or _extract_amount(line):
+		return None
+	return line
 
 
 def _extract_labeled_value(line, labels, next_line=None):

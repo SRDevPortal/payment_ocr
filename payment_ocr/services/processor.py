@@ -10,6 +10,7 @@ from payment_ocr.services.parser import clean_result, parse_payment_text
 from payment_ocr.services.settings import get_settings
 from payment_ocr.services.storage import get_file_bytes
 from payment_ocr.services.textract import detect_document_text
+from payment_ocr.services.gateway import reconcile_payment_row
 
 
 PARENT_DOCTYPE = "Patient Encounter"
@@ -158,6 +159,7 @@ def _process_row(doc, row, settings, persist=False):
 				"error_message": error_message,
 			}
 		)
+		verification = _reconcile_payment_verification(row.name, log_name, settings, persist=persist)
 		deleted_files = []
 		_delete_local_payment_proof_copies(doc, proof_url)
 
@@ -168,6 +170,7 @@ def _process_row(doc, row, settings, persist=False):
 			"updates": updates,
 			"amount_match_status": amount_status,
 			"deleted_file_names": deleted_files,
+			"verification": verification,
 			"extracted": extracted,
 		}
 
@@ -429,6 +432,16 @@ def _create_log(values):
 	if not frappe.db.exists("DocType", "Payment OCR Log"):
 		return None
 
+	values = _prepare_log_values(values)
+	existing_log_name = _get_existing_log_name(values)
+	if existing_log_name:
+		frappe.db.set_value(
+			"Payment OCR Log",
+			existing_log_name,
+			values,
+		)
+		return existing_log_name
+
 	insert_kwargs = {"ignore_permissions": True}
 	patient_encounter = values.get("patient_encounter")
 	if patient_encounter and not frappe.db.exists(PARENT_DOCTYPE, patient_encounter):
@@ -438,12 +451,47 @@ def _create_log(values):
 	doc = frappe.get_doc(
 		{
 			"doctype": "Payment OCR Log",
-			"processed_at": now_datetime(),
 			**values,
 		}
 	)
 	doc.insert(**insert_kwargs)
 	return doc.name
+
+
+def _prepare_log_values(values):
+	defaults = {
+		"raw_ocr_text": None,
+		"extracted_json": None,
+		"extracted_amount": None,
+		"amount_match_status": "Not Checked",
+		"reference_no": None,
+		"reference_date": None,
+		"error_message": None,
+	}
+	return {
+		**defaults,
+		**values,
+		"processed_at": now_datetime(),
+	}
+
+
+def _get_existing_log_name(values):
+	row_name = values.get("payment_row_name")
+	proof_url = values.get("payment_proof_url")
+	if not (row_name and proof_url):
+		return None
+
+	logs = frappe.get_all(
+		"Payment OCR Log",
+		filters={
+			"payment_row_name": row_name,
+			"payment_proof_url": proof_url,
+		},
+		pluck="name",
+		order_by="creation desc",
+		limit=1,
+	)
+	return logs[0] if logs else None
 
 
 def _clean_error_message(exc):
@@ -466,3 +514,14 @@ def _integration_available():
 		and frappe.db.exists("DocType", CHILD_DOCTYPE)
 		and frappe.db.exists("DocType", "Payment OCR Log")
 	)
+
+
+def _reconcile_payment_verification(row_name, log_name, settings, persist=False):
+	if not persist or not settings.get("enable_gateway_verification"):
+		return {}
+
+	try:
+		return reconcile_payment_row(row_name, ocr_log_name=log_name)
+	except Exception:
+		frappe.log_error(frappe.get_traceback(), "Payment OCR Gateway Verification Failed")
+		return {}

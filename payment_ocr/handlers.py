@@ -5,8 +5,10 @@ from payment_ocr.services.processor import process_patient_encounter_doc
 from payment_ocr.services.settings import get_settings
 
 
-def after_save_patient_encounter(doc, method=None):
+def on_update_patient_encounter(doc, method=None):
 	if _is_unsaved_encounter(doc):
+		return
+	if doc.docstatus == 1:
 		return
 
 	_run_auto_ocr(doc, persist=True)

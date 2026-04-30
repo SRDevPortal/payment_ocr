@@ -508,6 +508,7 @@ def _update_gateway_match(doc, values):
 
 def _update_payment_row_verification(transaction_doc, ocr_log, status, reason):
 	is_verified = _is_verified_status(status)
+	existing_verified_at = _get_existing_verified_at(ocr_log.payment_row_name) if is_verified else None
 	values = {
 		"mmp_payment_verification_status": status,
 		"mmp_verified_transaction_id": transaction_doc.transaction_id if is_verified else None,
@@ -515,12 +516,18 @@ def _update_payment_row_verification(transaction_doc, ocr_log, status, reason):
 		"mmp_verified_date": transaction_doc.transaction_date if is_verified else None,
 		"mmp_verified_payer": transaction_doc.payer if is_verified else None,
 		"mmp_verified_source": transaction_doc.source,
-		"mmp_verified_at": now_datetime() if is_verified else None,
+		"mmp_verified_at": (existing_verified_at or now_datetime()) if is_verified else None,
 		"mmp_verification_note": reason,
 	}
 	if is_verified:
 		values.update(_get_missing_reference_updates(ocr_log.payment_row_name, transaction_doc))
 	_update_payment_row_by_name(ocr_log.payment_row_name, values)
+
+
+def _get_existing_verified_at(row_name):
+	if not row_name or not frappe.db.exists(CHILD_DOCTYPE, row_name):
+		return None
+	return frappe.db.get_value(CHILD_DOCTYPE, row_name, "mmp_verified_at")
 
 
 def _get_missing_reference_updates(row_name, transaction_doc):

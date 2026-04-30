@@ -195,14 +195,15 @@ def _process_row(doc, row, settings, persist=False):
 
 
 def _refresh_existing_log(doc, row, log, settings, persist=False):
-	amount_status = _compare_amounts(log.extracted_amount, row.get("mmp_paid_amount"))
+	extracted_amount = _get_log_extracted_amount(log)
+	amount_status = _compare_amounts(extracted_amount, row.get("mmp_paid_amount"))
 	updates = {}
 
 	if log.status == "Completed":
 		updates = _apply_reference_updates(
 			row,
 			{
-				"amount": log.extracted_amount,
+				"amount": extracted_amount,
 				"transaction_id": log.reference_no,
 				"date": log.reference_date,
 			},
@@ -234,6 +235,17 @@ def _refresh_existing_log(doc, row, log, settings, persist=False):
 	}
 
 
+def _get_log_extracted_amount(log):
+	if log.get("extracted_json"):
+		try:
+			data = json.loads(log.extracted_json) or {}
+			if "amount" in data:
+				return data.get("amount")
+		except (TypeError, ValueError):
+			pass
+	return log.extracted_amount
+
+
 def _apply_reference_updates(row, extracted, amount_status="Not Checked", persist=False):
 	updates = {}
 	manual_amount_blank = _is_blank_amount(row.get("mmp_paid_amount"))
@@ -241,12 +253,6 @@ def _apply_reference_updates(row, extracted, amount_status="Not Checked", persis
 	# If OCR amount does not match the manually entered amount,
 	# do not auto-fill any values on the payment row.
 	if amount_status == "Mismatched":
-		return updates
-
-	# If user already entered an amount, only apply OCR payment details
-	# after an explicit amount match. When amount is blank, OCR may populate
-	# all available payment details from the receipt.
-	if not manual_amount_blank and amount_status != "Matched":
 		return updates
 
 	amount = extracted.get("amount")
@@ -469,6 +475,7 @@ def _get_existing_processed_log(row_name, proof_url):
 			"reference_no",
 			"reference_date",
 			"extracted_amount",
+			"extracted_json",
 			"amount_match_status",
 		],
 		order_by="creation desc",
@@ -513,17 +520,19 @@ def _prepare_log_values(values):
 	defaults = {
 		"raw_ocr_text": None,
 		"extracted_json": None,
-		"extracted_amount": None,
 		"amount_match_status": "Not Checked",
 		"reference_no": None,
 		"reference_date": None,
 		"error_message": None,
 	}
-	return {
+	prepared = {
 		**defaults,
 		**values,
 		"processed_at": now_datetime(),
 	}
+	if prepared.get("extracted_amount") is None:
+		prepared.pop("extracted_amount", None)
+	return prepared
 
 
 def _get_existing_log_name(values):

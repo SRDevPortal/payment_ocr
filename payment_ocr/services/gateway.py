@@ -18,6 +18,8 @@ PENDING_STATUSES = {"scheduled", "pending", "processing", "initiated", "new"}
 FAILED_STATUSES = {"failed", "failure", "declined", "cancelled", "canceled", "reversed", "refunded"}
 
 VERIFICATION_FIELDS = (
+	"mmp_reference_no",
+	"mmp_reference_date",
 	"mmp_payment_verification_status",
 	"mmp_verified_transaction_id",
 	"mmp_verified_amount",
@@ -505,17 +507,33 @@ def _update_gateway_match(doc, values):
 
 
 def _update_payment_row_verification(transaction_doc, ocr_log, status, reason):
+	is_verified = _is_verified_status(status)
 	values = {
 		"mmp_payment_verification_status": status,
-		"mmp_verified_transaction_id": transaction_doc.transaction_id if _is_verified_status(status) else None,
-		"mmp_verified_amount": transaction_doc.amount if _is_verified_status(status) else None,
-		"mmp_verified_date": transaction_doc.transaction_date if _is_verified_status(status) else None,
-		"mmp_verified_payer": transaction_doc.payer if _is_verified_status(status) else None,
+		"mmp_verified_transaction_id": transaction_doc.transaction_id if is_verified else None,
+		"mmp_verified_amount": transaction_doc.amount if is_verified else None,
+		"mmp_verified_date": transaction_doc.transaction_date if is_verified else None,
+		"mmp_verified_payer": transaction_doc.payer if is_verified else None,
 		"mmp_verified_source": transaction_doc.source,
-		"mmp_verified_at": now_datetime() if _is_verified_status(status) else None,
+		"mmp_verified_at": now_datetime() if is_verified else None,
 		"mmp_verification_note": reason,
 	}
+	if is_verified:
+		values.update(_get_missing_reference_updates(ocr_log.payment_row_name, transaction_doc))
 	_update_payment_row_by_name(ocr_log.payment_row_name, values)
+
+
+def _get_missing_reference_updates(row_name, transaction_doc):
+	if not row_name or not frappe.db.exists(CHILD_DOCTYPE, row_name):
+		return {}
+
+	row = frappe.get_doc(CHILD_DOCTYPE, row_name)
+	updates = {}
+	if not row.get("mmp_reference_no") and transaction_doc.transaction_id:
+		updates["mmp_reference_no"] = transaction_doc.transaction_id
+	if not row.get("mmp_reference_date") and transaction_doc.transaction_date:
+		updates["mmp_reference_date"] = transaction_doc.transaction_date
+	return updates
 
 
 def _update_payment_row_by_name(row_name, values):

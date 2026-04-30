@@ -141,7 +141,7 @@ after_migrate = "payment_ocr.install.after_migrate"
 
 doc_events = {
 	"Patient Encounter": {
-		"before_save": "payment_ocr.handlers.before_save_patient_encounter",
+		"after_save": "payment_ocr.handlers.after_save_patient_encounter",
 		"after_insert": "payment_ocr.handlers.after_insert_patient_encounter",
 	}
 }

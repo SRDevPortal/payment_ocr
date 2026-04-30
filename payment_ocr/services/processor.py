@@ -32,7 +32,9 @@ def process_patient_encounter_doc(doc, force=False, persist=False, row_name=None
 		if not row.get("mmp_payment_proof"):
 			continue
 
-		if not force and _has_existing_log(row.name, row.mmp_payment_proof):
+		existing_log = None if force else _get_existing_processed_log(row.name, row.mmp_payment_proof)
+		if existing_log:
+			results.append(_refresh_existing_log(doc, row, existing_log, settings, persist=persist))
 			continue
 
 		results.append(_process_row(doc, row, settings, persist=persist))
@@ -190,6 +192,46 @@ def _process_row(doc, row, settings, persist=False):
 			"log_name": log_name,
 			"error": str(exc),
 		}
+
+
+def _refresh_existing_log(doc, row, log, settings, persist=False):
+	amount_status = _compare_amounts(log.extracted_amount, row.get("mmp_paid_amount"))
+	updates = {}
+
+	if log.status == "Completed":
+		updates = _apply_reference_updates(
+			row,
+			{
+				"amount": log.extracted_amount,
+				"transaction_id": log.reference_no,
+				"date": log.reference_date,
+			},
+			amount_status=amount_status,
+			persist=persist,
+		)
+
+	if persist and log.amount_match_status != amount_status:
+		frappe.db.set_value(
+			"Payment OCR Log",
+			log.name,
+			"amount_match_status",
+			amount_status,
+			update_modified=False,
+		)
+
+	verification = {}
+	if log.status == "Completed":
+		verification = _reconcile_payment_verification(row.name, log.name, settings, persist=persist)
+
+	return {
+		"row_name": row.name,
+		"status": log.status,
+		"log_name": log.name,
+		"updates": updates,
+		"amount_match_status": amount_status,
+		"verification": verification,
+		"existing_log": True,
+	}
 
 
 def _apply_reference_updates(row, extracted, amount_status="Not Checked", persist=False):
@@ -414,18 +456,27 @@ def _duplicate_message(duplicate_log, deleted_files=None):
 	return message
 
 
-def _has_existing_log(row_name, proof_url):
+def _get_existing_processed_log(row_name, proof_url):
 	if not frappe.db.exists("DocType", "Payment OCR Log"):
-		return False
+		return None
 
 	log = frappe.get_all(
 		"Payment OCR Log",
 		filters={"payment_row_name": row_name, "payment_proof_url": proof_url},
-		fields=["name", "status"],
+		fields=[
+			"name",
+			"status",
+			"reference_no",
+			"reference_date",
+			"extracted_amount",
+			"amount_match_status",
+		],
 		order_by="creation desc",
 		limit=1,
 	)
-	return bool(log and log[0].status in {"Completed", "Failed", "Skipped"})
+	if log and log[0].status in {"Completed", "Failed", "Skipped"}:
+		return log[0]
+	return None
 
 
 def _create_log(values):

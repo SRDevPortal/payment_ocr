@@ -347,9 +347,13 @@ def _find_receiver_ocr_match(transaction_doc):
 	if transaction_amount is None or not transaction_datetime:
 		return None
 
+	filters = {"status": "Completed"}
+	if transaction_doc.transaction_date:
+		filters["processed_at"] = ("between", [_day_start(transaction_doc.transaction_date), _day_end(transaction_doc.transaction_date)])
+
 	candidates = frappe.get_all(
 		"Payment OCR Log",
-		filters={"status": "Completed"},
+		filters=filters,
 		fields=[
 			"name",
 			"patient_encounter",
@@ -740,6 +744,14 @@ def _to_datetime(value):
 def _date_from_datetime(value):
 	value = _to_datetime(value)
 	return value.date() if value else None
+
+
+def _day_start(value):
+	return f"{value} 00:00:00"
+
+
+def _day_end(value):
+	return f"{value} 23:59:59"
 
 
 def _parse_gateway_datetime(value):

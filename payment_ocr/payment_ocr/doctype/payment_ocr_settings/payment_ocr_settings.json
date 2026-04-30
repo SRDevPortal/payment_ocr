@@ -43,7 +43,7 @@
   },
   {
    "default": "0",
-   "description": "When enabled, match gateway transactions without OCR reference number by amount, timestamp within 1 second, payer name, and payment app.",
+   "description": "When enabled, match gateway transactions without OCR reference number. Uses amount, timestamp, payer, and payment app when available; receiver-side proofs can match by exact amount and exact timestamp only when one gateway candidate exists.",
    "fieldname": "enable_partial_gateway_match",
    "fieldtype": "Check",
    "label": "Enable Partial Gateway Match"

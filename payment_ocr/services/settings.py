@@ -36,9 +36,19 @@ def get_settings():
 	settings.amount_mismatch_behavior = doc.get("amount_mismatch_behavior") or defaults.amount_mismatch_behavior
 	settings.openai_api_key = None
 	if doc.enable_llm_fallback:
-		settings.openai_api_key = doc.get_password("openai_api_key") or frappe.conf.get("payment_ocr_openai_api_key")
-	settings.gateway_webhook_secret = doc.get_password("gateway_webhook_secret") or defaults.gateway_webhook_secret
+		settings.openai_api_key = _get_password(doc, "openai_api_key") or frappe.conf.get("payment_ocr_openai_api_key")
+	settings.gateway_webhook_secret = _get_password(doc, "gateway_webhook_secret") or defaults.gateway_webhook_secret
 	return settings
+
+
+def _get_password(doc, fieldname):
+	if not doc.get(fieldname):
+		return None
+
+	try:
+		return doc.get_password(fieldname)
+	except frappe.AuthenticationError:
+		return None
 
 
 def get_s3_config():

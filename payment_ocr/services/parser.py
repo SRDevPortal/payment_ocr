@@ -168,7 +168,7 @@ def normalize_datetime(value, date_value=None, time_value=None):
 def _extract_amount(line):
 	patterns = (
 		r"(?:rs\.?|inr|\u20b9)\s*([0-9][0-9,]*(?:\.\d{1,2})?)",
-		r"(?:amount|paid)\D{0,12}([0-9][0-9,]*(?:\.\d{1,2})?)",
+		r"(?:amount)\D{0,12}([0-9][0-9,]*(?:\.\d{1,2})?)",
 	)
 	for pattern in patterns:
 		match = re.search(pattern, line, flags=re.IGNORECASE)

@@ -71,6 +71,9 @@ frappe.ui.form.on("Patient Encounter", {
 						const verified = results.filter(
 							(row) => row.verification_status === "Verified"
 						);
+						const partials = results.filter(
+							(row) => row.verification_status === "Partial Matched"
+						);
 						const pending = results.filter((row) => row.verification_status === "Pending");
 						const mismatches = results.filter(
 							(row) => row.verification_status === "Amount Mismatch"
@@ -95,6 +98,15 @@ frappe.ui.form.on("Patient Encounter", {
 								message: __("{0} payment row(s) are still pending gateway receipt.", [
 									pending.length,
 								]),
+							});
+						} else if (partials.length) {
+							frappe.msgprint({
+								title: __("Payment Partially Matched"),
+								indicator: "orange",
+								message: __(
+									"{0} payment row(s) verified and {1} payment row(s) partially matched.",
+									[verified.length, partials.length]
+								),
 							});
 						} else {
 							frappe.show_alert({

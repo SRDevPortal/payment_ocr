@@ -4,39 +4,112 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "ocr_processing_section",
+  "enable_payment_ocr",
   "enable_auto_ocr",
+  "enable_manual_ocr",
+  "textract_section",
+  "use_app_level_ocr_config",
+  "textract_access_key_id",
+  "textract_secret_access_key",
   "textract_region",
+  "openai_api_key",
+  "openai_model",
   "verification_section",
   "enable_gateway_verification",
   "enable_partial_gateway_match",
+  "use_app_level_gateway_config",
   "gateway_webhook_secret",
-  "llm_section",
-  "enable_llm_fallback",
-  "openai_api_key",
-  "openai_model",
   "mismatch_section",
   "amount_mismatch_behavior"
  ],
  "fields": [
   {
+   "fieldname": "ocr_processing_section",
+   "fieldtype": "Section Break",
+   "label": "OCR Controls"
+  },
+  {
    "default": "1",
+   "description": "Master switch. When disabled, payment proof OCR will not run automatically or manually.",
+   "fieldname": "enable_payment_ocr",
+   "fieldtype": "Check",
+   "label": "Enable Payment OCR"
+  },
+  {
+   "default": "1",
+   "description": "Run OCR automatically when payment proofs are added or Patient Encounter is saved.",
    "fieldname": "enable_auto_ocr",
    "fieldtype": "Check",
    "label": "Enable Auto OCR"
   },
   {
-   "description": "Optional. Uses site aws_region when blank.",
+   "default": "1",
+   "description": "Show the manual Read Payment Proofs button and allow manual OCR API calls.",
+   "fieldname": "enable_manual_ocr",
+   "fieldtype": "Check",
+   "label": "Enable Manual OCR"
+  },
+  {
+   "fieldname": "textract_section",
+   "fieldtype": "Section Break",
+   "label": "OCR Extraction"
+  },
+  {
+   "default": "0",
+   "description": "When enabled, OCR extraction uses only the credentials and keys entered below. When disabled, OCR extraction uses site_config.json.",
+   "fieldname": "use_app_level_ocr_config",
+   "fieldtype": "Check",
+   "label": "Use App-Level OCR Config"
+  },
+  {
+   "depends_on": "eval:doc.use_app_level_ocr_config",
+   "description": "Required when Use App-Level OCR Config is enabled.",
+   "fieldname": "textract_access_key_id",
+   "fieldtype": "Data",
+   "label": "Textract Access Key ID",
+   "mandatory_depends_on": "eval:doc.use_app_level_ocr_config"
+  },
+  {
+   "depends_on": "eval:doc.use_app_level_ocr_config",
+   "description": "Required when Use App-Level OCR Config is enabled.",
+   "fieldname": "textract_secret_access_key",
+   "fieldtype": "Password",
+   "label": "Textract Secret Access Key",
+   "mandatory_depends_on": "eval:doc.use_app_level_ocr_config"
+  },
+  {
+   "depends_on": "eval:doc.use_app_level_ocr_config",
+   "description": "Required when Use App-Level OCR Config is enabled.",
    "fieldname": "textract_region",
    "fieldtype": "Data",
-   "label": "Textract Region Override"
+   "label": "Textract Region",
+   "mandatory_depends_on": "eval:doc.use_app_level_ocr_config"
+  },
+  {
+   "depends_on": "eval:doc.use_app_level_ocr_config",
+   "description": "Optional. Enables OpenAI cleanup when normal OCR parsing cannot extract enough payment details.",
+   "fieldname": "openai_api_key",
+   "fieldtype": "Password",
+   "label": "OpenAI API Key"
+  },
+  {
+   "default": "gpt-4.1-mini",
+   "depends_on": "eval:doc.use_app_level_ocr_config",
+   "description": "When Use App-Level OCR Config is disabled, the app uses payment_ocr_openai_model from site_config.json, or this default if not set.",
+   "fieldname": "openai_model",
+   "fieldtype": "Data",
+   "label": "OpenAI Model",
+   "mandatory_depends_on": "eval:doc.use_app_level_ocr_config"
   },
   {
    "fieldname": "verification_section",
    "fieldtype": "Section Break",
-   "label": "Gateway Verification"
+   "label": "Payment Verification"
   },
   {
    "default": "1",
+   "description": "Match OCR results with gateway transactions when gateway data is available.",
    "fieldname": "enable_gateway_verification",
    "fieldtype": "Check",
    "label": "Enable Gateway Verification"
@@ -49,37 +122,24 @@
    "label": "Enable Partial Gateway Match"
   },
   {
-   "description": "Required for n8n/Chrome extension webhook requests. Send as X-Payment-OCR-Token.",
+   "default": "0",
+   "description": "When enabled, gateway verification webhook requests use only the secret entered below. When disabled, webhook requests use payment_ocr_gateway_webhook_secret from site_config.json.",
+   "fieldname": "use_app_level_gateway_config",
+   "fieldtype": "Check",
+   "label": "Use App-Level Gateway Config"
+  },
+  {
+   "depends_on": "eval:doc.enable_gateway_verification && doc.use_app_level_gateway_config",
+   "description": "Required for n8n/Chrome extension webhook requests when Use App-Level Gateway Config is enabled. Send as X-Payment-OCR-Token.",
    "fieldname": "gateway_webhook_secret",
    "fieldtype": "Password",
-   "label": "Gateway Webhook Secret"
-  },
-  {
-   "fieldname": "llm_section",
-   "fieldtype": "Section Break",
-   "label": "LLM Fallback"
-  },
-  {
-   "default": "0",
-   "fieldname": "enable_llm_fallback",
-   "fieldtype": "Check",
-   "label": "Enable LLM Fallback"
-  },
-  {
-   "fieldname": "openai_api_key",
-   "fieldtype": "Password",
-   "label": "OpenAI API Key"
-  },
-  {
-   "default": "gpt-4.1-mini",
-   "fieldname": "openai_model",
-   "fieldtype": "Data",
-   "label": "OpenAI Model"
+   "label": "Gateway Webhook Secret",
+   "mandatory_depends_on": "eval:doc.enable_gateway_verification && doc.use_app_level_gateway_config"
   },
   {
    "fieldname": "mismatch_section",
    "fieldtype": "Section Break",
-   "label": "Amount Mismatch"
+   "label": "Review Rules"
   },
   {
    "default": "Warn Only",

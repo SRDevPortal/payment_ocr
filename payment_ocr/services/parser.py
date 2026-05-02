@@ -21,6 +21,7 @@ IGNORED_TRANSACTION_CANDIDATES = {
 	"payment",
 	"success",
 	"completed",
+	"products",
 }
 
 
@@ -209,17 +210,17 @@ def _extract_transaction_id(line, next_line=None):
 		return None
 
 	same_line = re.search(r"[:#-]\s*([A-Z0-9][A-Z0-9/-]{5,})\b", line, flags=re.IGNORECASE)
-	if same_line:
+	if same_line and _looks_like_transaction_reference(same_line.group(1)):
 		return same_line.group(1)
 
 	all_candidates = re.findall(r"\b[A-Z0-9][A-Z0-9/-]{7,}\b", line, flags=re.IGNORECASE)
 	for candidate in all_candidates:
-		if candidate.lower() not in IGNORED_TRANSACTION_CANDIDATES and not _looks_like_date(candidate):
+		if _looks_like_transaction_reference(candidate):
 			return candidate
 
 	if next_line:
 		next_candidate = re.search(r"\b[A-Z0-9][A-Z0-9/-]{7,}\b", next_line, flags=re.IGNORECASE)
-		if next_candidate and not _looks_like_date(next_candidate.group(0)):
+		if next_candidate and _looks_like_transaction_reference(next_candidate.group(0)):
 			return next_candidate.group(0)
 
 	return None
@@ -277,7 +278,7 @@ def _clean_transaction_id(value):
 	if not value:
 		return None
 	value = str(value).strip().strip(":#- ")
-	if len(value) < 6 or _looks_like_date(value):
+	if not _looks_like_transaction_reference(value):
 		return None
 	return value
 
@@ -360,6 +361,19 @@ def _looks_like_new_section(line):
 
 def _looks_like_date(value):
 	return bool(re.fullmatch(r"\d{1,4}[/-]\d{1,2}[/-]\d{1,4}", str(value)))
+
+
+def _looks_like_transaction_reference(value):
+	value = str(value or "").strip().strip(":#- ")
+	if len(value) < 6:
+		return False
+	if _looks_like_date(value):
+		return False
+	if value.lower() in IGNORED_TRANSACTION_CANDIDATES:
+		return False
+	if not re.fullmatch(r"[A-Z0-9][A-Z0-9/-]*", value, flags=re.IGNORECASE):
+		return False
+	return bool(re.search(r"\d", value))
 
 
 def _next_line(lines, index):

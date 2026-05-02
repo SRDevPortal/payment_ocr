@@ -9,7 +9,7 @@ from payment_ocr.services.llm import cleanup_with_llm
 from payment_ocr.services.parser import clean_result, parse_payment_text
 from payment_ocr.services.settings import get_settings
 from payment_ocr.services.storage import get_file_bytes
-from payment_ocr.services.textract import detect_document_text
+from payment_ocr.services.textract import detect_document_text_with_details
 from payment_ocr.services.gateway import reconcile_payment_row
 
 
@@ -99,8 +99,9 @@ def _process_row(doc, row, settings, persist=False):
 
 	try:
 		image_bytes = get_file_bytes(proof_url, settings.textract_region)
-		lines = detect_document_text(image_bytes, settings.textract_region)
-		raw_text = "\n".join(lines)
+		lines, raw_text = detect_document_text_with_details(image_bytes, settings.textract_region)
+		if not raw_text:
+			raw_text = "\n".join(lines)
 		extracted = parse_payment_text(lines)
 
 		if _needs_llm(extracted, settings):

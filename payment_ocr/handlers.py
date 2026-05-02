@@ -21,7 +21,7 @@ def after_insert_patient_encounter(doc, method=None):
 
 def _run_auto_ocr(doc, persist=False):
 	settings = get_settings()
-	if not settings.enable_auto_ocr:
+	if not settings.enable_payment_ocr or not settings.enable_auto_ocr:
 		return
 
 	results = process_patient_encounter_doc(doc, force=False, persist=persist)

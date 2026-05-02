@@ -338,12 +338,14 @@ def _round_rupees(value):
 def _needs_llm(extracted, settings):
 	if not settings.get("enable_llm_fallback"):
 		return False
-	return not (extracted.get("amount") and extracted.get("date") and extracted.get("transaction_id"))
+	return not (extracted.get("amount") and extracted.get("date"))
 
 
 def _merge_extracted(primary, fallback):
 	merged = dict(primary or {})
 	for key, value in (fallback or {}).items():
+		if key in ("payer", "receiver"):
+			continue
 		if value not in (None, "") and not merged.get(key):
 			merged[key] = value
 	return clean_result(merged)

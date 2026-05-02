@@ -143,6 +143,7 @@ def reconcile_gateway_transaction(transaction_name):
 			"verified_at": now_datetime() if _is_verified_status(status) else None,
 		},
 	)
+	_sync_ocr_log_amount_status(match)
 	_update_payment_row_verification(doc, match, status, reason)
 	return _result_from_gateway(doc)
 
@@ -522,6 +523,45 @@ def _update_payment_row_verification(transaction_doc, ocr_log, status, reason):
 	if is_verified:
 		values.update(_get_missing_reference_updates(ocr_log.payment_row_name, transaction_doc))
 	_update_payment_row_by_name(ocr_log.payment_row_name, values)
+
+
+def _sync_ocr_log_amount_status(ocr_log):
+	if not ocr_log or not ocr_log.get("name"):
+		return
+
+	amount_status = _get_ocr_log_amount_status(ocr_log)
+	if not amount_status or ocr_log.get("amount_match_status") == amount_status:
+		return
+
+	frappe.db.set_value(
+		"Payment OCR Log",
+		ocr_log.name,
+		"amount_match_status",
+		amount_status,
+		update_modified=False,
+	)
+
+
+def _get_ocr_log_amount_status(ocr_log):
+	paid_amount = _get_payment_row_paid_amount(ocr_log.get("payment_row_name"))
+	ocr_data = _get_ocr_match_data(ocr_log)
+	extracted_amount = ocr_data.get("amount")
+
+	if paid_amount in (None, "") or extracted_amount in (None, ""):
+		return "Not Checked"
+
+	return "Matched" if _round_paise(paid_amount) == _round_paise(extracted_amount) else "Mismatched"
+
+
+def _get_payment_row_paid_amount(row_name):
+	if not row_name or not frappe.db.exists(CHILD_DOCTYPE, row_name):
+		return None
+
+	meta = frappe.get_meta(CHILD_DOCTYPE)
+	if not meta.has_field("mmp_paid_amount"):
+		return None
+
+	return frappe.db.get_value(CHILD_DOCTYPE, row_name, "mmp_paid_amount")
 
 
 def _get_existing_verified_at(row_name):

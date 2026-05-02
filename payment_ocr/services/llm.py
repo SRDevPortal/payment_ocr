@@ -10,6 +10,10 @@ def cleanup_with_llm(text, settings):
 
 	prompt = f"""
 Extract payment details from this OCR text.
+Use only the actual payment confirmation section. Ignore unrelated receipt previews,
+translations, chat screenshots, product text, or promotional text that may appear
+inside the same screenshot. Leave payer and receiver blank unless they are clearly
+shown as payment parties in the confirmation section.
 
 Return only JSON in this format:
 {{

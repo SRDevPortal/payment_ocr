@@ -58,6 +58,8 @@ def parse_payment_text(lines):
 
 		if result["receiver"] is None:
 			result["receiver"] = _extract_labeled_value(line, ("to", "paid to", "receiver"), next_line)
+			if result["receiver"] is None:
+				result["receiver"] = _extract_unlabeled_receiver(lines, index)
 
 	return clean_result(result)
 
@@ -260,6 +262,102 @@ def _extract_unlabeled_payer(lines, index):
 	if _looks_like_new_section(line) or _extract_time(line) or _extract_amount(line):
 		return None
 	return line
+
+
+def _extract_unlabeled_receiver(lines, index):
+	handle_index = _upi_handle_index(lines, index)
+	if handle_index is None or not _has_amount_after(lines, handle_index):
+		return None
+
+	candidates = []
+	for candidate_index in range(handle_index - 1, max(-1, handle_index - 7), -1):
+		candidate = str(lines[candidate_index] or "").strip()
+		if _should_stop_receiver_scan(candidate):
+			break
+		if _looks_like_payment_card_name_line(candidate):
+			candidates.append(candidate)
+
+	if not candidates:
+		return None
+
+	return " ".join(reversed(candidates))
+
+
+def _upi_handle_index(lines, index):
+	line = str(lines[index] or "").strip()
+	if "@" in line:
+		return index
+
+	next_line = str(lines[index + 1] or "").strip() if index + 1 < len(lines) else ""
+	if "@" in next_line and _looks_like_upi_handle_fragment(line):
+		return index + 1
+
+	return None
+
+
+def _has_amount_after(lines, index):
+	for offset in range(1, 4):
+		next_index = index + offset
+		if next_index >= len(lines):
+			return False
+		if _extract_amount(lines[next_index]):
+			return True
+	return False
+
+
+def _should_stop_receiver_scan(line):
+	line = str(line or "").strip()
+	if not line:
+		return True
+	if line.startswith("---") and line.endswith("---"):
+		return True
+	if _extract_date(line) or _extract_time(line) or _extract_amount(line):
+		return True
+
+	lower_line = line.lower()
+	stop_words = (
+		"payment successful",
+		"success",
+		"completed",
+		"split expense",
+		"view details",
+		"share receipt",
+		"chatgpt",
+		"done",
+	)
+	return lower_line in stop_words
+
+
+def _looks_like_payment_card_name_line(line):
+	line = str(line or "").strip()
+	if not line or "@" in line:
+		return False
+	if len(line) <= 3 and line.isupper():
+		return False
+	if re.search(r"\d", line):
+		return False
+	if _looks_like_upi_handle_fragment(line):
+		return False
+	if _looks_like_new_section(line):
+		return False
+
+	letters = re.findall(r"[A-Za-z]", line)
+	if not letters:
+		return False
+
+	uppercase_letters = re.findall(r"[A-Z]", line)
+	return len(uppercase_letters) / len(letters) >= 0.6
+
+
+def _looks_like_upi_handle_fragment(line):
+	line = str(line or "").strip()
+	if not line:
+		return False
+	if " " in line:
+		return False
+	if line != line.lower():
+		return False
+	return bool(re.fullmatch(r"[a-z0-9._-]{5,}", line, flags=re.IGNORECASE))
 
 
 def _extract_labeled_value(line, labels, next_line=None):

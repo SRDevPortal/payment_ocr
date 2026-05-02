@@ -6,3 +6,5 @@
 # Patches added in this section will be executed after doctypes are migrated
 payment_ocr.patches.fix_mismatched_log_status
 payment_ocr.patches.add_payment_verification_fields
+payment_ocr.patches.enable_payment_ocr_by_default
+payment_ocr.patches.remove_llm_fallback_setting

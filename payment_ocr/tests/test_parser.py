@@ -30,6 +30,36 @@ class TestPaymentParser(unittest.TestCase):
 		self.assertEqual(result["status"], "SUCCESS")
 		self.assertIsNone(result["transaction_id"])
 
+	def test_payment_card_receiver_is_extracted_from_upi_handle_block(self):
+		result = parse_payment_text(
+			[
+				"--- Original Image ---",
+				"SR INSTITUTE",
+				"SL",
+				"OF ADVANCED",
+				"AYURVEDIC SCIENCES",
+				"PVT LTD",
+				"srinstofadvayurvedic",
+				"62326168@hdfcbank",
+				"\u20b96,000",
+				"Split Expense",
+				"View Details",
+				"Share Receipt",
+				"ChatGPT",
+				"&",
+				"SHREE BALAJI FASHION & ACCESSORIES",
+				"Products - will will not be replaced under any circumstances",
+				"Payment Successful",
+				"02 May 2026 at 01:55 PM",
+			]
+		)
+
+		self.assertEqual(result["amount"], 6000.0)
+		self.assertEqual(result["date"], "2026-05-02")
+		self.assertEqual(result["time"], "13:55:00")
+		self.assertEqual(result["receiver"], "SR INSTITUTE OF ADVANCED AYURVEDIC SCIENCES PVT LTD")
+		self.assertIsNone(result["payer"])
+
 	def test_llm_cleanup_rejects_plain_words_as_transaction_id(self):
 		result = clean_result(
 			{

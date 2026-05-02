@@ -148,6 +148,7 @@ doc_events = {
 
 doctype_js = {
 	"Patient Encounter": "public/js/patient_encounter.js",
+	"Payment OCR Settings": "public/js/payment_ocr_settings.js",
 }
 
 fixtures = [

@@ -146,6 +146,9 @@ def _process_row(doc, row, settings, persist=False):
 			amount_status=amount_status,
 			persist=persist,
 		)
+		if amount_status == "Not Checked" and updates.get("mmp_paid_amount") not in (None, ""):
+			amount_status = _compare_amounts(extracted.get("amount"), row.get("mmp_paid_amount"))
+
 		status = "Skipped" if amount_status == "Mismatched" else "Completed"
 		error_message = _mismatch_message(extracted.get("amount"), row.get("mmp_paid_amount")) if amount_status == "Mismatched" else None
 

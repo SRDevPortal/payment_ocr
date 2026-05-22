@@ -45,7 +45,9 @@ def _get_s3_object(file_url, region_override=None):
 	for key in keys:
 		try:
 			response = s3.get_object(Bucket=config.aws_s3_bucket, Key=key)
-			return response["Body"].read()
+			content = response["Body"].read()
+			_validate_max_size(content, config.aws_s3_max_mb)
+			return content
 		except Exception as exc:
 			last_error = exc
 
@@ -58,6 +60,7 @@ def _get_local_or_http_file(file_url):
 
 		response = requests.get(file_url, timeout=30)
 		response.raise_for_status()
+		_validate_max_size(response.content, frappe.conf.get("aws_s3_max_mb"))
 		return response.content
 
 	local_path = get_file_path(file_url)
@@ -65,7 +68,9 @@ def _get_local_or_http_file(file_url):
 		frappe.throw("Payment proof file was not found locally or on S3.")
 
 	with open(local_path, "rb") as file_obj:
-		return file_obj.read()
+		content = file_obj.read()
+		_validate_max_size(content, frappe.conf.get("aws_s3_max_mb"))
+		return content
 
 
 def _looks_like_s3_http_url(file_url):
@@ -102,3 +107,16 @@ def _get_extension(file_url):
 	path = parsed.path if parsed.scheme else file_url
 	_, ext = os.path.splitext(path.split("?", 1)[0])
 	return ext.lower()
+
+
+def _validate_max_size(content, max_mb):
+	if not max_mb:
+		return
+
+	try:
+		max_bytes = int(float(max_mb) * 1024 * 1024)
+	except (TypeError, ValueError):
+		return
+
+	if max_bytes > 0 and len(content) > max_bytes:
+		frappe.throw(f"Payment proof file is larger than the allowed S3 limit of {max_mb} MB.")

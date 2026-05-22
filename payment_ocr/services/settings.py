@@ -78,13 +78,21 @@ def _get_password(doc, fieldname):
 
 def get_s3_config():
 	config = frappe._dict(
-		aws_access_key_id=frappe.conf.get("aws_s3_access_key_id") or frappe.conf.get("aws_access_key_id"),
-		aws_secret_access_key=frappe.conf.get("aws_s3_secret_access_key") or frappe.conf.get("aws_secret_access_key"),
-		aws_region=frappe.conf.get("aws_s3_region") or frappe.conf.get("aws_region"),
-		aws_s3_bucket=frappe.conf.get("aws_s3_bucket") or frappe.conf.get("aws_bucket"),
+		aws_access_key_id=frappe.conf.get("aws_s3_access_key_id"),
+		aws_secret_access_key=frappe.conf.get("aws_s3_secret_access_key"),
+		aws_region=frappe.conf.get("aws_s3_region"),
+		aws_s3_bucket=frappe.conf.get("aws_s3_bucket"),
+		aws_s3_prefix=frappe.conf.get("aws_s3_prefix"),
+		aws_s3_max_mb=frappe.conf.get("aws_s3_max_mb"),
 	)
 
-	missing = [key for key, value in config.items() if not value]
+	required_values = {
+		"aws_s3_access_key_id": config.aws_access_key_id,
+		"aws_s3_secret_access_key": config.aws_secret_access_key,
+		"aws_s3_region": config.aws_region,
+		"aws_s3_bucket": config.aws_s3_bucket,
+	}
+	missing = [key for key, value in required_values.items() if not value]
 	if missing:
 		frappe.throw("Missing S3 configuration: " + ", ".join(missing))
 

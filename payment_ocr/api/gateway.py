@@ -1,6 +1,7 @@
 import frappe
 
 from payment_ocr.services.gateway import ingest_transactions, reconcile_existing_payments, reconcile_payment_row
+from payment_ocr.services.settings import get_settings
 
 
 @frappe.whitelist(allow_guest=True)
@@ -15,6 +16,8 @@ def receive_gateway_transactions():
 
 @frappe.whitelist()
 def reconcile_payment_verification(row_name):
+	_validate_gateway_verification_enabled()
+
 	if not frappe.db.exists("SR Multi Mode Payment", row_name):
 		frappe.throw("Payment row not found.")
 
@@ -28,6 +31,8 @@ def reconcile_payment_verification(row_name):
 
 @frappe.whitelist()
 def reconcile_patient_encounter_payment_verifications(encounter_name):
+	_validate_gateway_verification_enabled()
+
 	doc = frappe.get_doc("Patient Encounter", encounter_name)
 	doc.check_permission("write")
 	results = []
@@ -39,7 +44,17 @@ def reconcile_patient_encounter_payment_verifications(encounter_name):
 
 @frappe.whitelist()
 def reconcile_existing_payment_verifications(limit=200):
+	_validate_gateway_verification_enabled()
+
 	frappe.only_for("System Manager")
 	results = reconcile_existing_payments(limit=int(limit or 200))
 	frappe.db.commit()
 	return results
+
+
+def _validate_gateway_verification_enabled():
+	settings = get_settings()
+	if not settings.enable_payment_ocr:
+		frappe.throw("Payment OCR is disabled in Payment OCR Settings.")
+	if not settings.enable_gateway_verification:
+		frappe.throw("Gateway verification is disabled in Payment OCR Settings.")

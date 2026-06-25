@@ -27,6 +27,14 @@ def get_ocr_availability():
 		"payment_ocr_enabled": bool(settings.enable_payment_ocr),
 		"manual_ocr_enabled": bool(settings.enable_payment_ocr and settings.enable_manual_ocr),
 		"auto_ocr_enabled": bool(settings.enable_payment_ocr and settings.enable_auto_ocr),
+		"gateway_verification_enabled": bool(
+			settings.enable_payment_ocr and settings.enable_gateway_verification
+		),
+		"partial_gateway_match_enabled": bool(
+			settings.enable_payment_ocr
+			and settings.enable_gateway_verification
+			and settings.enable_partial_gateway_match
+		),
 	}
 
 

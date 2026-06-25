@@ -45,6 +45,15 @@ def get_settings():
 		settings.use_app_level_ocr_config = defaults.use_app_level_ocr_config
 	if settings.use_app_level_gateway_config is None:
 		settings.use_app_level_gateway_config = defaults.use_app_level_gateway_config
+	if not settings.enable_payment_ocr:
+		settings.enable_auto_ocr = 0
+		settings.enable_manual_ocr = 0
+		settings.enable_gateway_verification = 0
+		settings.enable_partial_gateway_match = 0
+		settings.use_app_level_gateway_config = 0
+	if not settings.enable_gateway_verification:
+		settings.enable_partial_gateway_match = 0
+		settings.use_app_level_gateway_config = 0
 	if settings.use_app_level_ocr_config:
 		settings.openai_model = doc.get("openai_model") or "gpt-4.1-mini"
 		settings.textract_access_key_id = doc.get("textract_access_key_id")

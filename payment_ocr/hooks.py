@@ -206,8 +206,8 @@ fixtures = [
 
 # Request Events
 # ----------------
-# before_request = ["payment_ocr.utils.before_request"]
-# after_request = ["payment_ocr.utils.after_request"]
+before_request = ["payment_ocr.document_privacy.guard_request"]
+after_request = ["payment_ocr.response_privacy.scrub_response"]
 
 # Job Events
 # ----------

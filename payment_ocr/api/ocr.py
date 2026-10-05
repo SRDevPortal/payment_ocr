@@ -1,5 +1,6 @@
 import frappe
 
+from payment_ocr.number_privacy import browser_response
 from payment_ocr.services.processor import (
 	get_logs,
 	process_patient_encounter_by_name,
@@ -9,12 +10,14 @@ from payment_ocr.services.settings import get_settings
 
 
 @frappe.whitelist()
+@browser_response
 def process_patient_encounter(encounter_name):
 	_validate_manual_ocr_enabled()
 	return process_patient_encounter_by_name(encounter_name, force=True)
 
 
 @frappe.whitelist()
+@browser_response
 def process_payment_row(encounter_name, row_name):
 	_validate_manual_ocr_enabled()
 	return process_patient_encounter_by_name(encounter_name, force=True, row_name=row_name)
@@ -39,6 +42,7 @@ def get_ocr_availability():
 
 
 @frappe.whitelist()
+@browser_response
 def get_payment_ocr_logs(encounter_name):
 	doc = frappe.get_doc("Patient Encounter", encounter_name)
 	doc.check_permission("read")

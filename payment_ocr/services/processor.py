@@ -5,6 +5,7 @@ from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 import frappe
 from frappe.utils import flt, get_files_path, now_datetime
 
+from payment_ocr.number_privacy import mask_log_text
 from payment_ocr.services.llm import cleanup_with_llm
 from payment_ocr.services.parser import clean_result, parse_payment_text
 from payment_ocr.services.settings import get_settings
@@ -455,7 +456,7 @@ def _delete_local_payment_proof_copies(doc, proof_url):
 				os.remove(path)
 				deleted_paths.append(path)
 			except OSError:
-				frappe.log_error(frappe.get_traceback(), "Payment OCR Local File Cleanup Failed")
+				frappe.log_error(mask_log_text(frappe.get_traceback()), "Payment OCR Local File Cleanup Failed")
 	return deleted_paths
 
 
